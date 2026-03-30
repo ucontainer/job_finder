@@ -159,6 +159,7 @@ npm run dev
 ### Environment Variables
 ```
 ANTHROPIC_API_KEY=         # Required — Claude API
+RAPIDAPI_KEY=              # Required — JSearch API via RapidAPI (free tier)
 PROXY_LIST=                # Optional — comma-separated proxy URLs
 SCRAPING_ENABLED=false     # Toggle scraping fallback
 ```

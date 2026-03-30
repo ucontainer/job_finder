@@ -1,12 +1,16 @@
 from pydantic import BaseModel
 
 
-class JobTitleResult(BaseModel):
+class ResumeProfile(BaseModel):
     job_title: str
+    tech_stack: list[str] = []
+    certifications: list[str] = []
 
 
 class UploadResponse(BaseModel):
     job_title: str
+    tech_stack: list[str] = []
+    certifications: list[str] = []
     session_id: str
 
 

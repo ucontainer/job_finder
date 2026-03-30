@@ -108,17 +108,71 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Resume Profile */
+.resume-profile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.resume-profile h3 {
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+
+.profile-field {
+  margin-bottom: 0.75rem;
+}
+
+.profile-field:last-child {
+  margin-bottom: 0;
+}
+
+.profile-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.profile-value {
+  font-weight: 600;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tag {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.tag-tech {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-hover);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.tag-cert {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
 /* Status */
 .error {
   color: #ef4444;
   text-align: center;
   margin: 1rem 0;
-}
-
-.detected-title {
-  text-align: center;
-  margin: 1rem 0;
-  color: var(--text-muted);
 }
 
 /* Filters */

@@ -1,14 +1,18 @@
-"""Job aggregation service — fetches postings from APIs and optional scraping fallback."""
+"""Job aggregation service — fetches postings from real job board APIs."""
 
 from __future__ import annotations
 
 import hashlib
+import logging
 import time
-from datetime import datetime, timedelta
 
-from backend.config import SCRAPING_ENABLED
+import requests
+
+from backend.config import RAPIDAPI_KEY, SCRAPING_ENABLED
 from backend.models.schemas import JobPosting
-from backend.utils.anti_ban import random_delay
+from backend.utils.anti_ban import get_random_user_agent, random_delay
+
+logger = logging.getLogger(__name__)
 
 # In-memory cache: key → (timestamp, results)
 _cache: dict[str, tuple[float, list[JobPosting]]] = {}
@@ -22,7 +26,7 @@ def _cache_key(job_title: str, location: str) -> str:
 def fetch_jobs(job_title: str, location: str) -> list[JobPosting]:
     """Fetch job postings for a given title and location.
 
-    Tries API sources first, falls back to scraping if enabled.
+    Tries JSearch API first, falls back to scraping if enabled.
     Results are cached for CACHE_TTL seconds.
     """
     key = _cache_key(job_title, location)
@@ -33,25 +37,92 @@ def fetch_jobs(job_title: str, location: str) -> list[JobPosting]:
 
     jobs: list[JobPosting] = []
 
-    # --- API sources (stub — replace with real integrations) ---
-    jobs.extend(_fetch_from_apis(job_title, location))
+    # --- JSearch API (primary source) ---
+    jobs.extend(_fetch_from_jsearch(job_title, location))
 
     # --- Scraping fallback ---
     if not jobs and SCRAPING_ENABLED:
         jobs.extend(_scrape_jobs(job_title, location))
 
-    # If no real sources available yet, return demo data
     if not jobs:
-        jobs = _demo_jobs(job_title, location)
+        logger.warning(
+            "No jobs found for '%s' in '%s'. "
+            "Check that RAPIDAPI_KEY is set in your .env file.",
+            job_title,
+            location,
+        )
 
     _cache[key] = (time.time(), jobs)
     return jobs
 
 
-def _fetch_from_apis(job_title: str, location: str) -> list[JobPosting]:
-    """Placeholder for real API integrations (LinkedIn, Indeed, ZipRecruiter)."""
-    # TODO: Integrate real job board APIs
-    return []
+def _fetch_from_jsearch(job_title: str, location: str) -> list[JobPosting]:
+    """Fetch real job postings from JSearch API (via RapidAPI).
+
+    Free tier: 200 requests/month.
+    Sign up at: https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch
+    """
+    if not RAPIDAPI_KEY:
+        logger.warning("RAPIDAPI_KEY not set — skipping JSearch API.")
+        return []
+
+    query = f"{job_title} in {location}" if location else job_title
+
+    headers = {
+        "x-rapidapi-host": "jsearch.p.rapidapi.com",
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "User-Agent": get_random_user_agent(),
+    }
+
+    params = {
+        "query": query,
+        "page": "1",
+        "num_pages": "1",
+        "date_posted": "month",  # only recent postings
+    }
+
+    try:
+        random_delay(0.3, 0.8)  # light delay to be respectful
+        response = requests.get(
+            "https://jsearch.p.rapidapi.com/search",
+            headers=headers,
+            params=params,
+            timeout=15,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException as exc:
+        logger.error("JSearch API request failed: %s", exc)
+        return []
+
+    jobs: list[JobPosting] = []
+
+    for item in data.get("data", []):
+        # Extract and validate required fields
+        title = item.get("job_title", "").strip()
+        company = item.get("employer_name", "").strip()
+        url = item.get("job_apply_link") or item.get("job_google_link", "")
+        date_posted = item.get("job_posted_at_datetime_utc", "")
+
+        if not title or not company:
+            continue
+
+        # Normalize date to YYYY-MM-DD
+        if date_posted:
+            date_posted = date_posted[:10]  # trim time portion
+
+        jobs.append(
+            JobPosting(
+                job_title=title,
+                company=company,
+                job_url=url,
+                posting_date=date_posted,
+                source="jsearch",
+            )
+        )
+
+    logger.info("JSearch returned %d jobs for '%s'", len(jobs), query)
+    return jobs
 
 
 def _scrape_jobs(job_title: str, location: str) -> list[JobPosting]:
@@ -59,38 +130,3 @@ def _scrape_jobs(job_title: str, location: str) -> list[JobPosting]:
     random_delay()
     # TODO: Implement real scraping with Playwright
     return []
-
-
-def _demo_jobs(job_title: str, location: str) -> list[JobPosting]:
-    """Return sample data so the UI works before real integrations are wired up."""
-    today = datetime.now()
-    return [
-        JobPosting(
-            job_title=job_title,
-            company="Acme Corp",
-            job_url="https://example.com/jobs/1",
-            posting_date=(today - timedelta(days=1)).strftime("%Y-%m-%d"),
-            source="demo",
-        ),
-        JobPosting(
-            job_title=f"Senior {job_title}",
-            company="Globex Inc",
-            job_url="https://example.com/jobs/2",
-            posting_date=(today - timedelta(days=3)).strftime("%Y-%m-%d"),
-            source="demo",
-        ),
-        JobPosting(
-            job_title=f"{job_title} Lead",
-            company="Initech",
-            job_url="https://example.com/jobs/3",
-            posting_date=(today - timedelta(days=7)).strftime("%Y-%m-%d"),
-            source="demo",
-        ),
-        JobPosting(
-            job_title=f"Junior {job_title}",
-            company="Umbrella Corp",
-            job_url="https://example.com/jobs/4",
-            posting_date=(today - timedelta(days=14)).strftime("%Y-%m-%d"),
-            source="demo",
-        ),
-    ]

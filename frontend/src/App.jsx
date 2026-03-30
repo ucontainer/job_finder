@@ -2,12 +2,13 @@ import { useState } from "react";
 import FileUpload from "./components/FileUpload";
 import Filters from "./components/Filters";
 import JobCard from "./components/JobCard";
+import ResumeProfile from "./components/ResumeProfile";
 import { uploadResume, fetchJobs } from "./api/client";
 import "./App.css";
 
 export default function App() {
   const [loading, setLoading] = useState(false);
-  const [jobTitle, setJobTitle] = useState("");
+  const [profile, setProfile] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [minScore, setMinScore] = useState(40);
   const [error, setError] = useState("");
@@ -18,11 +19,16 @@ export default function App() {
     setLoading(true);
     setError("");
     setJobs([]);
+    setProfile(null);
     setLocationState(loc);
 
     try {
       const upload = await uploadResume(file, loc);
-      setJobTitle(upload.job_title);
+      setProfile({
+        job_title: upload.job_title,
+        tech_stack: upload.tech_stack || [],
+        certifications: upload.certifications || [],
+      });
       setSessionId(upload.session_id);
 
       const matched = await fetchJobs(upload.session_id, loc, minScore);
@@ -60,11 +66,7 @@ export default function App() {
 
       {error && <p className="error">{error}</p>}
 
-      {jobTitle && (
-        <p className="detected-title">
-          Detected title: <strong>{jobTitle}</strong>
-        </p>
-      )}
+      {profile && <ResumeProfile profile={profile} />}
 
       {jobs.length > 0 && (
         <>

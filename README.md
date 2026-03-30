@@ -7,6 +7,7 @@ AI-powered job-matching platform that extracts your job title from a resume, fin
 - Python 3.11+
 - Node.js 18+
 - An [Anthropic API key](https://console.anthropic.com/)
+- A [RapidAPI key](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) (free tier — 200 requests/month)
 
 ## Setup
 
@@ -20,13 +21,18 @@ cd job_finder
 ### 2. Configure environment variables
 
 ```bash
+# Linux / Mac
 cp .env.example .env
+
+# Windows
+copy .env.example .env
 ```
 
-Open `.env` and add your API key:
+Open `.env` and add your API keys:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+RAPIDAPI_KEY=your-rapidapi-key
 ```
 
 ### 3. Install backend dependencies

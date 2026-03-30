@@ -1,18 +1,27 @@
+import json
 from pathlib import Path
 
 import anthropic
 import pdfplumber
 
 from backend.config import ANTHROPIC_API_KEY
+from backend.models.schemas import ResumeProfile
 
 _client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
-EXTRACTION_PROMPT = """Extract the primary job title from the following resume text.
+EXTRACTION_PROMPT = """Extract the following from the resume text below:
+
+1. **job_title** — the primary (most recent or most relevant) job title.
+2. **tech_stack** — a list of technologies, programming languages, frameworks, tools, and platforms mentioned (e.g., "Python", "AWS", "React", "Docker", "PostgreSQL"). Only include concrete technical skills, not soft skills.
+3. **certifications** — a list of professional certifications mentioned (e.g., "AWS Solutions Architect", "PMP", "CISSP", "Google Cloud Professional"). Include the full certification name. If none are found, return an empty list.
+
 Rules:
-- Only return the most recent or most relevant job title.
 - Do NOT extract personal data (name, email, phone, address).
-- If multiple titles exist, pick the most recent one.
-- Return ONLY a JSON object: {"job_title": "<title>"}
+- If multiple job titles exist, pick the most recent one.
+- For tech_stack, deduplicate and keep canonical names (e.g., "JS" → "JavaScript").
+- Return ONLY a JSON object with this exact shape:
+
+{"job_title": "...", "tech_stack": ["...", "..."], "certifications": ["...", "..."]}
 
 Resume text:
 """
@@ -28,22 +37,28 @@ def extract_text_from_pdf(pdf_path: Path) -> str:
     return "\n".join(text_parts)
 
 
-def extract_job_title(resume_text: str) -> str:
+def extract_resume_profile(resume_text: str) -> ResumeProfile:
+    """Extract job title, tech stack, and certifications from resume text."""
     if not _client:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured")
 
     message = _client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=256,
+        max_tokens=1024,
         messages=[
             {"role": "user", "content": EXTRACTION_PROMPT + resume_text}
         ],
     )
-    import json
 
     raw = message.content[0].text.strip()
     # Handle possible markdown code fences
     if raw.startswith("```"):
         raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
     data = json.loads(raw)
-    return data["job_title"]
+
+    return ResumeProfile(
+        job_title=data.get("job_title", "Unknown"),
+        tech_stack=data.get("tech_stack", []),
+        certifications=data.get("certifications", []),
+    )
