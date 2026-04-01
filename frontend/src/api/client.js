@@ -35,11 +35,27 @@ export async function fetchJobs(sessionId, location = "", minScore = 40) {
   return res.json();
 }
 
-export function downloadCsvUrl(sessionId, location = "", minScore = 40) {
+export async function downloadCsv(sessionId, location = "", minScore = 40) {
   const params = new URLSearchParams({
     session_id: sessionId,
     location,
     min_score: String(minScore),
   });
-  return `${API_BASE}/jobs/csv?${params}`;
+
+  const res = await fetch(`${API_BASE}/jobs/csv?${params}`);
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "CSV download failed");
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "matched_jobs.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

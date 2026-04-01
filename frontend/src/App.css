@@ -186,13 +186,14 @@ button:disabled {
 
 .csv-download {
   padding: 0.5rem 1rem;
+  background: transparent;
   border: 1px solid var(--accent);
   border-radius: 8px;
   color: var(--accent);
-  text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
   white-space: nowrap;
+  cursor: pointer;
   transition: background 0.2s;
 }
 
