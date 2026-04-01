@@ -86,13 +86,14 @@ async def export_jobs_csv(
 
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["Job Title", "Company", "Job URL", "Date Posted", "Cover Letter", "Match %"])
+    writer.writerow(["Job Title", "Company", "Job URL", "Date Posted", "Why Work Here", "Cover Letter", "Match %"])
     for job in matched:
         writer.writerow([
             job.job_title,
             job.company,
             job.job_url,
             job.posting_date,
+            job.why_work_here,
             job.cover_letter,
             f"{job.match_score}%",
         ])

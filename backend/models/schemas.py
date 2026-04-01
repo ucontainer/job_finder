@@ -29,3 +29,4 @@ class MatchedJob(BaseModel):
     posting_date: str
     match_score: float
     cover_letter: str = ""
+    why_work_here: str = ""
