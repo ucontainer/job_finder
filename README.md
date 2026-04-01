@@ -113,52 +113,8 @@ job_finder/
 └── CLAUDE.md
 ```
 
-## Deployment
-
-The app is deployment-ready for platforms like **Render**, **Railway**, or **Heroku**.
-
-### Render (recommended)
-
-A `render.yaml` is included for one-click deploy:
-
-1. Push the repo to GitHub.
-2. Go to [Render Dashboard](https://dashboard.render.com/) → **New** → **Blueprint**.
-3. Connect the repo — Render will auto-detect `render.yaml`.
-4. Set the environment variables in the Render dashboard:
-   - `ANTHROPIC_API_KEY`
-   - `RAPIDAPI_KEY`
-   - `FRONTEND_URL` → your frontend's Render URL (e.g., `https://jobbb-finder-frontend.onrender.com`)
-   - `VITE_API_URL` → your backend's Render URL + `/api` (e.g., `https://jobbb-finder-api.onrender.com/api`)
-
-### Other platforms
-
-Use the included `Procfile`:
-
-```bash
-web: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
-```
-
-For the frontend, build with `VITE_API_URL` pointing to your backend:
-
-```bash
-cd frontend
-VITE_API_URL=https://your-backend-url.com/api npm run build
-```
-
-Then serve the `frontend/dist/` folder as a static site.
-
-### Environment variables for production
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Claude API key |
-| `RAPIDAPI_KEY` | Yes | JSearch API key (RapidAPI) |
-| `FRONTEND_URL` | Yes | Frontend URL for CORS (e.g., `https://your-app.com`) |
-| `VITE_API_URL` | Yes | Backend API URL for frontend (e.g., `https://api.your-app.com/api`) |
-| `PORT` | Auto | Set automatically by hosting platforms |
-
 ## Notes
 
+- The job aggregator returns **demo data** by default. Replace `_fetch_from_apis()` in `backend/services/job_aggregator.py` with real job board integrations.
 - Set `SCRAPING_ENABLED=true` in `.env` to enable the Playwright scraping fallback.
 - Job results are cached for 1 hour to reduce API load.
-- Sessions are persisted to a JSON file — for multi-instance scaling, replace with Redis or a database.
