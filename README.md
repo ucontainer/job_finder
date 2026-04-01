@@ -130,44 +130,6 @@ A `render.yaml` is included for one-click deploy:
    - `FRONTEND_URL` → your frontend's Render URL (e.g., `https://jobbb-finder-frontend.onrender.com`)
    - `VITE_API_URL` → your backend's Render URL + `/api` (e.g., `https://jobbb-finder-api.onrender.com/api`)
 
-### cPanel
-
-Your cPanel host must have the **"Setup Python App"** feature (most do — Namecheap, A2 Hosting, etc.).
-
-**Backend:**
-
-1. In cPanel, go to **Setup Python App** → **Create Application**.
-2. Set Python version to **3.11+** and the application root to the project folder.
-3. Set the **Application startup file** to `passenger_wsgi.py`.
-4. Click **Create**, then open the virtual environment terminal and run:
-   ```bash
-   pip install -r requirements.txt
-   ```
-5. In cPanel → **Environment Variables** (or edit `.env` via File Manager), set:
-   - `ANTHROPIC_API_KEY`
-   - `RAPIDAPI_KEY`
-   - `FRONTEND_URL` → `https://yourdomain.com` (your domain)
-6. Restart the Python app.
-
-**Frontend:**
-
-1. Build the frontend locally with your backend URL:
-   ```bash
-   cd frontend
-
-   # Linux / Mac
-   VITE_API_URL=https://yourdomain.com/api npm run build
-
-   # Windows (PowerShell)
-   $env:VITE_API_URL="https://yourdomain.com/api"; npm run build
-   ```
-2. Upload the contents of `frontend/dist/` to `public_html/` (or a subdomain folder) via cPanel **File Manager** or FTP.
-
-**Important cPanel notes:**
-- The backend runs behind Passenger (not uvicorn) — the `passenger_wsgi.py` file handles this.
-- If the API and frontend share the same domain, put the backend at the root and the frontend static files in `public_html/`.
-- If using subdomains (e.g., `api.yourdomain.com` + `app.yourdomain.com`), create each as a separate domain/subdomain in cPanel.
-
 ### Other platforms
 
 Use the included `Procfile`:
