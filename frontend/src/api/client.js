@@ -34,3 +34,12 @@ export async function fetchJobs(sessionId, location = "", minScore = 40) {
 
   return res.json();
 }
+
+export function downloadCsvUrl(sessionId, location = "", minScore = 40) {
+  const params = new URLSearchParams({
+    session_id: sessionId,
+    location,
+    min_score: String(minScore),
+  });
+  return `${API_BASE}/jobs/csv?${params}`;
+}

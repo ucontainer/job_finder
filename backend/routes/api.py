@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import StreamingResponse
 
 from backend.config import UPLOAD_DIR
 from backend.models.schemas import MatchedJob, ResumeProfile, UploadResponse
@@ -65,3 +68,37 @@ async def get_matched_jobs(
     matched = match_jobs(profile.job_title, postings, min_score=min_score)
     matched = generate_cover_letters_batch(matched, profile)
     return matched
+
+
+@router.get("/jobs/csv")
+async def export_jobs_csv(
+    session_id: str,
+    location: str = "",
+    min_score: float = 40.0,
+):
+    profile = _sessions.get(session_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Session not found. Upload a resume first.")
+
+    postings = fetch_jobs(profile.job_title, location)
+    matched = match_jobs(profile.job_title, postings, min_score=min_score)
+    matched = generate_cover_letters_batch(matched, profile)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["Job Title", "Company", "Job URL", "Cover Letter", "Match %"])
+    for job in matched:
+        writer.writerow([
+            job.job_title,
+            job.company,
+            job.job_url,
+            job.cover_letter,
+            f"{job.match_score}%",
+        ])
+
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=matched_jobs.csv"},
+    )

@@ -3,7 +3,7 @@ import FileUpload from "./components/FileUpload";
 import Filters from "./components/Filters";
 import JobCard from "./components/JobCard";
 import ResumeProfile from "./components/ResumeProfile";
-import { uploadResume, fetchJobs } from "./api/client";
+import { uploadResume, fetchJobs, downloadCsvUrl } from "./api/client";
 import "./App.css";
 
 export default function App() {
@@ -70,7 +70,16 @@ export default function App() {
 
       {jobs.length > 0 && (
         <>
-          <Filters minScore={minScore} onMinScoreChange={handleFilterChange} />
+          <div className="results-toolbar">
+            <Filters minScore={minScore} onMinScoreChange={handleFilterChange} />
+            <a
+              href={downloadCsvUrl(sessionId, location, minScore)}
+              className="csv-download"
+              download
+            >
+              Download CSV
+            </a>
+          </div>
           <div className="job-list">
             {jobs.map((job, i) => (
               <JobCard key={i} job={job} />
